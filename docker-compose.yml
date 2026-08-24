@@ -1,0 +1,9 @@
+services:
+  wbo:
+    image: lovasoa/wbo:v2.17.0
+    container_name: askrose-wbo
+    restart: unless-stopped
+    ports:
+      - "5001:80"
+    volumes:
+      - ./wbo-boards:/opt/app/server-data
