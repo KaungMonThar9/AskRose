@@ -8,11 +8,10 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 import { createRoom, validateCode } from '../routes/rooms.js';
-
 const corsHeaders = {
-	'Access-Control-Allow-Origin': 'http://127.0.0.1:5500',
+	'Access-Control-Allow-Origin': '*',
 	'Access-Control-Allow-Methods': 'POST, OPTIONS',
-	'Access-Control-Allow-Headers': 'Content-Type',
+	'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
 export default {
@@ -28,6 +27,10 @@ export default {
 		const { success } = await env.ASKROSE_RATE_LIMITER.limit({ key: `${url.pathname}:${clientIp}` });
 		if (!success) {
 			return new Response('Too many requests', { status: 429 });
+		}
+
+		if (request.method === 'POST' && url.pathname === '/api/rooms/:code/close') {
+			return addCorsHeaders(await closeRoom(request, env));
 		}
 
 		if (request.method === 'POST' && url.pathname === '/api/rooms') {

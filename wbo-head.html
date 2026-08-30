@@ -138,17 +138,39 @@
     nav.style.display = "flex";
 
     if (isTutor) {
-      document.getElementById("new-room-button").addEventListener("click", () => {
-        console.log("New Room clicked");
-      });
+      document
+        .getElementById("new-room-button")
+        .addEventListener("click", async () => {
+          const token = new URLSearchParams(window.location.search).get(
+            "token",
+          );
+          const response = await fetch(`http://localhost:8787/api/rooms`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
 
-      document.getElementById("close-room-button").addEventListener("click", () => {
-        console.log("Close Room clicked");
-      });
+          const data = await response.json();
+
+          const newBoardUrl =
+            `http://localhost:5001/boards/${data.code}` +
+            `?token=${encodeURIComponent(data.token)}`;
+
+          window.location.assign(newBoardUrl);
+        });
+
+      document
+        .getElementById("close-room-button")
+        .addEventListener("click", () => {
+          console.log("Close Room clicked");
+        });
     } else {
-      document.getElementById("exit-room-button").addEventListener("click", () => {
-        window.history.back();
-      });
+      document
+        .getElementById("exit-room-button")
+        .addEventListener("click", () => {
+          window.history.back();
+        });
     }
   });
 </script>

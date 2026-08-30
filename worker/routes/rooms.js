@@ -1,16 +1,18 @@
-import { SignJWT } from 'jose';
-
-async function createBoardToken(env, roomCode, role, expiresAt) {
-	const secret = new TextEncoder().encode(env.AUTH_SECRET_KEY);
-	const now = Math.floor(Date.now() / 1000);
-
-	return new SignJWT({ roles: [`${role}:${roomCode}`] }).setProtectedHeader({ alg: 'HS256' }).setExpirationTime(expiresAt).sign(secret);
-}
+import { jwtVerify, SignJWT } from 'jose';
 
 export async function createRoom(request, env) {
-	const { password } = await request.json();
-	if (password !== env.TUTOR_PASSWORD) {
-		return new Response('INCORRECT PASSWORD', { status: 401 });
+	const authHeader = request.headers.get('Authorization');
+	if (authHeader) {
+		const isModerator = await verifyModeratorToken(request, env);
+
+		if (!isModerator) {
+			return Response.json({ error: 'Invalid tutor token' }, { status: 401 });
+		}
+	} else {
+		const { password } = await request.json();
+		if (password !== env.TUTOR_PASSWORD) {
+			return new Response('INCORRECT PASSWORD', { status: 401 });
+		}
 	}
 
 	const createdAt = Math.floor(Date.now() / 1000); //converts milli to seconds
@@ -43,13 +45,6 @@ export async function createRoom(request, env) {
 	);
 }
 
-function generateRoomCode() {
-	const values = new Uint32Array(1);
-	crypto.getRandomValues(values);
-
-	return String(values[0] % 100000).padStart(5, '0');
-}
-
 export async function validateCode(request, env) {
 	const { code } = await request.json();
 
@@ -67,4 +62,41 @@ export async function validateCode(request, env) {
 	} else {
 		return Response.json({ valid: false }, { status: 404 });
 	}
+}
+
+async function verifyModeratorToken(request, env) {
+	const authHeader = request.headers.get('Authorization');
+
+	if (!authHeader?.startsWith('Bearer ')) {
+		return false;
+	}
+
+	const token = authHeader.slice('Bearer '.length);
+	const secret = new TextEncoder().encode(env.AUTH_SECRET_KEY);
+
+	try {
+		const { payload } = await jwtVerify(token, secret, {
+			algorithms: ['HS256'],
+		});
+
+		const role = payload.roles?.[0];
+
+		return role?.startsWith('moderator:') === true;
+	} catch {
+		return false;
+	}
+}
+
+function generateRoomCode() {
+	const values = new Uint32Array(1);
+	crypto.getRandomValues(values);
+
+	return String(values[0] % 100000).padStart(5, '0');
+}
+
+async function createBoardToken(env, roomCode, role, expiresAt) {
+	const secret = new TextEncoder().encode(env.AUTH_SECRET_KEY);
+	const now = Math.floor(Date.now() / 1000);
+
+	return new SignJWT({ roles: [`${role}:${roomCode}`] }).setProtectedHeader({ alg: 'HS256' }).setExpirationTime(expiresAt).sign(secret);
 }
