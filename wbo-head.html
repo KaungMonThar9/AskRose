@@ -10,3 +10,145 @@
       "https://askrose.org/wp-content/uploads/2018/08/cropped-favicon_askrose-32x32.png";
   }
 </script>
+<style>
+  #askrose-tutor-nav {
+    align-items: stretch;
+    background: white;
+    border-radius: 8px;
+    box-sizing: border-box;
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    position: fixed;
+    right: 0.5vw;
+    top: 0;
+    width: min(360px, calc(100vw - 16px));
+    z-index: 9999;
+  }
+
+  #askrose-tutor-nav button {
+    background: #e22f46;
+    border: none;
+    border-radius: 6px;
+    box-sizing: border-box;
+    color: white;
+    cursor: pointer;
+    font: inherit;
+    font-size: 18px;
+    padding: 12px 18px;
+  }
+
+  #askrose-tutor-nav .close-room {
+    background: #6b7280;
+  }
+
+  #askrose-tutor-nav button:hover {
+    background: #c9273d;
+  }
+
+  #askrose-tutor-nav .close-room:hover {
+    background: #4b5563;
+  }
+
+  .askrose-button-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .askrose-button-row button {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .askrose-student-row {
+    justify-content: flex-end;
+  }
+
+  .askrose-student-row button {
+    flex: 0 0 calc(50% - 4px);
+    width: calc(50% - 4px);
+  }
+
+  #askrose-tutor-nav .askrose-student-code {
+    align-self: flex-end;
+    width: calc(50% - 4px);
+  }
+
+  .askrose-room-code {
+    background: #f3f4f6;
+    border-radius: 6px;
+    box-sizing: border-box;
+    color: #17324d;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 10px;
+    text-align: center;
+    width: 100%;
+  }
+</style>
+
+<script>
+  function getJwtPayload(token) {
+    try {
+      const encodedPayload = token.split(".")[1];
+      const base64Payload = encodedPayload
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+
+      return JSON.parse(atob(base64Payload));
+    } catch {
+      return null;
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const token = new URLSearchParams(window.location.search).get("token");
+    const payload = token ? getJwtPayload(token) : null;
+
+    const roomCode = window.location.pathname.split("/").filter(Boolean).pop();
+
+    const isTutor = payload?.roles?.includes(`moderator:${roomCode}`);
+    const isStudent = payload?.roles?.includes(`editor:${roomCode}`);
+
+    if (!isTutor && !isStudent) {
+      return;
+    }
+
+    const nav = document.createElement("nav");
+    nav.id = "askrose-tutor-nav";
+
+    nav.innerHTML = isTutor
+      ? `
+          <div class="askrose-button-row">
+              <button id="new-room-button">New Room</button>
+              <button id="close-room-button" class="close-room">Close Room</button>
+          </div>
+          <div class="askrose-room-code">Room Code: <strong>${roomCode}</strong></div>
+        `
+      : `
+          <div class="askrose-button-row askrose-student-row">
+              <button id="exit-room-button" type="button">Exit Room</button>
+          </div>
+          <div class="askrose-room-code askrose-student-code">Code: <strong>${roomCode}</strong></div>
+        `;
+
+    document.body.append(nav);
+    nav.style.display = "flex";
+
+    if (isTutor) {
+      document.getElementById("new-room-button").addEventListener("click", () => {
+        console.log("New Room clicked");
+      });
+
+      document.getElementById("close-room-button").addEventListener("click", () => {
+        console.log("Close Room clicked");
+      });
+    } else {
+      document.getElementById("exit-room-button").addEventListener("click", () => {
+        window.history.back();
+      });
+    }
+  });
+</script>

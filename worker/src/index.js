@@ -18,11 +18,16 @@ const corsHeaders = {
 export default {
 	async fetch(request, env, ctx) {
 		const url = new URL(request.url);
+		const clientIp = request.headers.get('CF-Connecting-IP') || 'local-dev';
 		if (request.method === 'OPTIONS') {
 			return new Response(null, {
 				status: 204,
 				headers: corsHeaders,
 			});
+		}
+		const { success } = await env.ASKROSE_RATE_LIMITER.limit({ key: `${url.pathname}:${clientIp}` });
+		if (!success) {
+			return new Response('Too many requests', { status: 429 });
 		}
 
 		if (request.method === 'POST' && url.pathname === '/api/rooms') {

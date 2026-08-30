@@ -6,18 +6,25 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "worker",
 	"main": "src/index.js",
+	"ratelimits": [
+		{
+			"name": "ASKROSE_RATE_LIMITER",
+			"namespace_id": "999189",
+			"simple": { "limit": 50, "period": 60 },
+		},
+	],
 	"compatibility_date": "2026-08-25",
 	"observability": {
-		"enabled": true
+		"enabled": true,
 	},
 	"upload_source_maps": true,
 	"d1_databases": [
 		{
 			"binding": "askrose_db",
 			"database_name": "askrose-db",
-			"database_id": "4718e300-aa8d-49c2-a0ff-fbd939aab385"
-		}
-	]
+			"database_id": "4718e300-aa8d-49c2-a0ff-fbd939aab385",
+		},
+	],
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
