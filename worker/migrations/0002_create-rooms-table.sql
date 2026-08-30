@@ -1,0 +1,2 @@
+-- Migration number: 0002 	 2026-08-30T00:41:08.583Z
+CREATE TABLE IF NOT EXISTS rooms(room_id INTEGER PRIMARY KEY, room_code TEXT NOT NULL UNIQUE, created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL);
