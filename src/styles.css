@@ -94,3 +94,8 @@ body {
 .auth-form button:hover {
   background-color: #c52338;
 }
+
+.form-error {
+  color: #d62839;
+  min-height: 1.2em;
+}

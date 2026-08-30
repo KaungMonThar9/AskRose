@@ -1,3 +1,10 @@
+const form = document.getElementById("student-form");
+form.addEventListener("submit", function (event) {
+  event.preventDefault();
+
+  checkCode(form.roomCode.value);
+});
+
 async function checkCode(code) {
   const url = "http://localhost:8787/api/validate";
   const response = await fetch(url, {
@@ -10,8 +17,11 @@ async function checkCode(code) {
 
   if (response.status === 200) {
     const data = await response.json();
-    const roomCode = data.code;
+    const token = data.token;
+    const boardUrl = `http://localhost:5001/boards/${encodeURIComponent(code)}?token=${encodeURIComponent(token)}`;
+    window.location.assign(boardUrl);
   } else {
-    console.log("Wrong code, please try again");
+    const errorMessage = document.getElementById("form-error");
+    errorMessage.textContent = "Invalid Room Code.";
   }
 }

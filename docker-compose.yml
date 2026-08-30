@@ -7,3 +7,7 @@ services:
       - "5001:80"
     volumes:
       - ./wbo-boards:/opt/app/server-data
+      - ./wbo-head.html:/opt/app/wbo-head.html:ro
+    environment:
+      WBO_HTML_HEAD_SNIPPET_PATH: /opt/app/wbo-head.html
+      AUTH_SECRET_KEY: ${AUTH_SECRET_KEY}

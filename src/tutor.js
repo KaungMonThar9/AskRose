@@ -11,9 +11,20 @@ async function requestRoom(password) {
   if (response.status === 201) {
     const data = await response.json();
     const roomCode = data.code;
+    const token = data.token;
+    const boardUrl = `http://localhost:5001/boards/${encodeURIComponent(roomCode)}?token=${encodeURIComponent(token)}`;
+    window.location.assign(boardUrl);
   } else if (response.status === 401) {
-    console.log("incorrect password");
+    const error = document.getElementById("form-error");
+    error.textContent = "Incorrect password";
   } else {
-    console.log("Unknown error, please try again later");
+    const error = document.getElementById("form-error");
+    error.textContent = "Unknown error, please try again later";
   }
 }
+
+const form = document.getElementById("tutor-form");
+form.addEventListener("submit", function (event) {
+  event.preventDefault();
+  requestRoom(form.tutorPassword.value);
+});

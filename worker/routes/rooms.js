@@ -1,3 +1,12 @@
+import { SignJWT } from 'jose';
+
+async function createBoardToken(env, roomCode, role, expiresAt) {
+	const secret = new TextEncoder().encode(env.AUTH_SECRET_KEY);
+	const now = Math.floor(Date.now() / 1000);
+
+	return new SignJWT({ roles: [`${role}:${roomCode}`] }).setProtectedHeader({ alg: 'HS256' }).setExpirationTime(expiresAt).sign(secret);
+}
+
 export async function createRoom(request, env) {
 	const { password } = await request.json();
 	if (password !== env.TUTOR_PASSWORD) {
@@ -13,9 +22,11 @@ export async function createRoom(request, env) {
 		const result = await env.askrose_db.prepare(attemptInsert).bind(roomCode, createdAt, expiresAt).run();
 
 		if (result.meta.changes === 1) {
+			const token = await createBoardToken(env, roomCode, 'moderator', expiresAt);
 			return Response.json(
 				{
 					code: roomCode,
+					token,
 				},
 				{ status: 201 },
 			);
@@ -47,12 +58,13 @@ export async function validateCode(request, env) {
 	}
 
 	const currentTime = Math.floor(Date.now() / 1000);
-	const checkCode = `SELECT EXISTS (SELECT 1 FROM rooms WHERE room_code = ? AND expires_at > ?) AS room_exists`;
-	const res = await env.askrose_db.prepare(checkCode).bind(code, currentTime).first();
+	const checkCode = `SELECT expires_at FROM rooms WHERE room_code = ? AND expires_at > ?`;
+	const room = await env.askrose_db.prepare(checkCode).bind(code, currentTime).first();
 
-	if (res.room_exists === 1) {
-		return Response.json({ code: code }, { status: 200 });
+	if (room) {
+		const token = await createBoardToken(env, String(code), 'editor', room.expires_at);
+		return Response.json({ token }, { status: 200 });
 	} else {
-		return Response.json({ status: 404 });
+		return Response.json({ valid: false }, { status: 404 });
 	}
 }
