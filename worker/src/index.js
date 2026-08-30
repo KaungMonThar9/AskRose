@@ -7,9 +7,20 @@
  *
  * Learn more at https://developers.cloudflare.com/workers/
  */
+import { createRoom, validateCode } from '../routes/rooms.js';
 
 export default {
 	async fetch(request, env, ctx) {
-		return new Response("Hello World!");
+		const url = new URL(request.url);
+
+		if (request.method === 'POST' && url.pathname === '/api/rooms') {
+			return createRoom(request, env);
+		}
+
+		if (request.method === 'POST' && url.pathname === '/api/validate') {
+			return validateCode(request, env);
+		}
+
+		return new Response('NOT FOUND', { status: 404 });
 	},
 };
