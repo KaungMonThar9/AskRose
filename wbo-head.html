@@ -154,7 +154,7 @@
           const data = await response.json();
 
           const newBoardUrl =
-            `http://localhost:5001/boards/${data.code}` +
+            `http://localhost:5001/boards/${encodeURIComponent(data.code)}` +
             `?token=${encodeURIComponent(data.token)}`;
 
           window.location.assign(newBoardUrl);
@@ -162,14 +162,36 @@
 
       document
         .getElementById("close-room-button")
-        .addEventListener("click", () => {
-          console.log("Close Room clicked");
+        .addEventListener("click", async () => {
+          const response = await fetch(
+            `http://localhost:8787/api/rooms/${encodeURIComponent(roomCode)}/close`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ roomCode }),
+            },
+          );
+
+          const data = await response.json();
+          if (data.isClosed) {
+            const enterUrl = `http://127.0.0.1:5500/src/tutor.html`;
+            window.location.assign(enterUrl);
+          }
+          //same execution in the future error message for else
+          else {
+            const loginUrl = `http://127.0.0.1:5500/src/tutor.html`;
+            window.location.assign(loginUrl);
+          }
         });
     } else {
       document
         .getElementById("exit-room-button")
         .addEventListener("click", () => {
-          window.history.back();
+          const studentUrl = `http://127.0.0.1:5500/src/student.html`;
+          window.location.assign(studentUrl);
         });
     }
   });

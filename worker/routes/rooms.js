@@ -64,6 +64,28 @@ export async function validateCode(request, env) {
 	}
 }
 
+export async function closeRoom(request, env) {
+	const authHeader = request.headers.get('Authorization');
+	if (authHeader) {
+		const isModerator = await verifyModeratorToken(request, env);
+
+		if (!isModerator) {
+			return Response.json({ error: 'Invalid tutor token' }, { status: 401 });
+		}
+
+		const closeSql = `UPDATE rooms SET closed = 1 WHERE room_code = ?`;
+		const { roomCode } = await request.json();
+		const isClosed = await env.askrose_db.prepare(closeSql).bind(roomCode).run();
+		if (isClosed) {
+			return Response.json({ isClosed: true }, { status: 200 });
+		} else {
+			return Response.json({ isClosed: false }, { status: 404 });
+		}
+	} else {
+		return Response.json({ error: 'Invalid tutor token' }, { status: 401 });
+	}
+}
+
 async function verifyModeratorToken(request, env) {
 	const authHeader = request.headers.get('Authorization');
 

@@ -7,7 +7,7 @@
  *
  * Learn more at https://developers.cloudflare.com/workers/
  */
-import { createRoom, validateCode } from '../routes/rooms.js';
+import { createRoom, validateCode, closeRoom } from '../routes/rooms.js';
 const corsHeaders = {
 	'Access-Control-Allow-Origin': '*',
 	'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -29,7 +29,9 @@ export default {
 			return new Response('Too many requests', { status: 429 });
 		}
 
-		if (request.method === 'POST' && url.pathname === '/api/rooms/:code/close') {
+		const match = url.pathname.match(/^\/api\/rooms\/(\d{5})\/close$/);
+
+		if (request.method === 'POST' && match) {
 			return addCorsHeaders(await closeRoom(request, env));
 		}
 
