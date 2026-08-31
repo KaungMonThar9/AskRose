@@ -26,13 +26,13 @@ export default {
 		}
 		const { success } = await env.ASKROSE_RATE_LIMITER.limit({ key: `${url.pathname}:${clientIp}` });
 		if (!success) {
-			return new Response('Too many requests', { status: 429 });
+			return addCorsHeaders(new Response('Too many requests', { status: 429 }));
 		}
 
 		const match = url.pathname.match(/^\/api\/rooms\/(\d{5})\/close$/);
 
 		if (request.method === 'POST' && match) {
-			return addCorsHeaders(await closeRoom(request, env));
+			return addCorsHeaders(await closeRoom(request, env, match[1]));
 		}
 
 		if (request.method === 'POST' && url.pathname === '/api/rooms') {

@@ -53,7 +53,7 @@ export async function validateCode(request, env) {
 	}
 
 	const currentTime = Math.floor(Date.now() / 1000);
-	const checkCode = `SELECT expires_at FROM rooms WHERE room_code = ? AND expires_at > ?`;
+	const checkCode = `SELECT expires_at FROM rooms WHERE room_code = ? AND expires_at > ? AND closed = 0`;
 	const room = await env.askrose_db.prepare(checkCode).bind(code, currentTime).first();
 
 	if (room) {
@@ -64,29 +64,24 @@ export async function validateCode(request, env) {
 	}
 }
 
-export async function closeRoom(request, env) {
-	const authHeader = request.headers.get('Authorization');
-	if (authHeader) {
-		const isModerator = await verifyModeratorToken(request, env);
+export async function closeRoom(request, env, roomCode) {
+	const isModerator = await verifyModeratorToken(request, env, roomCode);
 
-		if (!isModerator) {
-			return Response.json({ error: 'Invalid tutor token' }, { status: 401 });
-		}
-
-		const closeSql = `UPDATE rooms SET closed = 1 WHERE room_code = ?`;
-		const { roomCode } = await request.json();
-		const isClosed = await env.askrose_db.prepare(closeSql).bind(roomCode).run();
-		if (isClosed) {
-			return Response.json({ isClosed: true }, { status: 200 });
-		} else {
-			return Response.json({ isClosed: false }, { status: 404 });
-		}
-	} else {
+	if (!isModerator) {
 		return Response.json({ error: 'Invalid tutor token' }, { status: 401 });
 	}
+
+	const closeSql = `UPDATE rooms SET closed = 1 WHERE room_code = ? AND closed = 0`;
+	const result = await env.askrose_db.prepare(closeSql).bind(roomCode).run();
+
+	if (result.meta.changes === 1) {
+		return Response.json({ isClosed: true }, { status: 200 });
+	}
+
+	return Response.json({ isClosed: false }, { status: 404 });
 }
 
-async function verifyModeratorToken(request, env) {
+async function verifyModeratorToken(request, env, roomCode) {
 	const authHeader = request.headers.get('Authorization');
 
 	if (!authHeader?.startsWith('Bearer ')) {
@@ -102,6 +97,10 @@ async function verifyModeratorToken(request, env) {
 		});
 
 		const role = payload.roles?.[0];
+
+		if (roomCode) {
+			return role === `moderator:${roomCode}`;
+		}
 
 		return role?.startsWith('moderator:') === true;
 	} catch {

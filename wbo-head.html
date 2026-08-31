@@ -141,9 +141,6 @@
       document
         .getElementById("new-room-button")
         .addEventListener("click", async () => {
-          const token = new URLSearchParams(window.location.search).get(
-            "token",
-          );
           const response = await fetch(`http://localhost:8787/api/rooms`, {
             method: "POST",
             headers: {
@@ -171,7 +168,6 @@
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({ roomCode }),
             },
           );
 
